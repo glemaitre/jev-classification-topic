@@ -12,9 +12,18 @@ wheels/
 # Secrets
 .env
 
-# Benchmark artifacts
+# Benchmark artifacts: raw caches stay ignored, viewable results are tracked.
 cache/
-results/
+
+# Ignore everything under results/, then re-include the human-readable outputs.
+results/*
+!results/plots/
+results/plots/*
+!results/plots/*.png
+!results/*.md
+!results/*.txt
+!results/*.csv
+!results/*.json
 .ipynb_checkpoints/
 
 # Tooling

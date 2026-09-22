@@ -1,0 +1,209 @@
+{
+  "sample_size": 20,
+  "n_repeats": 3,
+  "stable_choice_rate": 0.95,
+  "mean_confidence_spread": 0.023000000000000003,
+  "max_confidence_spread": 0.18000000000000005,
+  "records": [
+    {
+      "index": 0,
+      "choices": [
+        "rec.autos",
+        "rec.autos",
+        "rec.autos"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.0
+    },
+    {
+      "index": 1,
+      "choices": [
+        "comp.graphics",
+        "comp.graphics",
+        "comp.graphics"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.029999999999999916
+    },
+    {
+      "index": 2,
+      "choices": [
+        "talk.politics.misc",
+        "talk.politics.misc",
+        "talk.politics.misc"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.06
+    },
+    {
+      "index": 3,
+      "choices": [
+        "talk.politics.mideast",
+        "talk.politics.mideast",
+        "talk.politics.mideast"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.0
+    },
+    {
+      "index": 4,
+      "choices": [
+        "alt.atheism",
+        "alt.atheism",
+        "alt.atheism"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.040000000000000036
+    },
+    {
+      "index": 5,
+      "choices": [
+        "sci.med",
+        "sci.med",
+        "sci.med"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.0
+    },
+    {
+      "index": 6,
+      "choices": [
+        "soc.religion.christian",
+        "soc.religion.christian",
+        "soc.religion.christian"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.0
+    },
+    {
+      "index": 7,
+      "choices": [
+        "soc.religion.christian",
+        "soc.religion.christian",
+        "soc.religion.christian"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.18000000000000005
+    },
+    {
+      "index": 8,
+      "choices": [
+        "comp.windows.x",
+        "comp.windows.x",
+        "comp.windows.x"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.0
+    },
+    {
+      "index": 9,
+      "choices": [
+        "comp.graphics",
+        "comp.graphics",
+        "comp.graphics"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.0
+    },
+    {
+      "index": 10,
+      "choices": [
+        "comp.os.ms-windows.misc",
+        "comp.os.ms-windows.misc",
+        "comp.os.ms-windows.misc"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.0
+    },
+    {
+      "index": 11,
+      "choices": [
+        "comp.windows.x",
+        "comp.windows.x",
+        "comp.windows.x"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.010000000000000009
+    },
+    {
+      "index": 12,
+      "choices": [
+        "talk.politics.mideast",
+        "talk.politics.mideast",
+        "talk.politics.mideast"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.0
+    },
+    {
+      "index": 13,
+      "choices": [
+        "misc.forsale",
+        "misc.forsale",
+        "misc.forsale"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.09000000000000002
+    },
+    {
+      "index": 14,
+      "choices": [
+        "alt.atheism",
+        "alt.atheism",
+        "alt.atheism"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.010000000000000009
+    },
+    {
+      "index": 15,
+      "choices": [
+        "comp.sys.ibm.pc.hardware",
+        "comp.sys.ibm.pc.hardware",
+        "comp.sys.ibm.pc.hardware"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.0
+    },
+    {
+      "index": 16,
+      "choices": [
+        "comp.sys.mac.hardware",
+        "comp.sys.mac.hardware",
+        "comp.sys.mac.hardware"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.010000000000000009
+    },
+    {
+      "index": 17,
+      "choices": [
+        "comp.sys.ibm.pc.hardware",
+        "sci.electronics",
+        "sci.electronics"
+      ],
+      "stable_choice": false,
+      "max_confidence_spread": 0.030000000000000027
+    },
+    {
+      "index": 18,
+      "choices": [
+        "misc.forsale",
+        "misc.forsale",
+        "misc.forsale"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.0
+    },
+    {
+      "index": 19,
+      "choices": [
+        "talk.politics.guns",
+        "talk.politics.guns",
+        "talk.politics.guns"
+      ],
+      "stable_choice": true,
+      "max_confidence_spread": 0.0
+    }
+  ]
+}
