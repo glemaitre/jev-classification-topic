@@ -48,10 +48,14 @@ def cmd_data(args: argparse.Namespace) -> int:
 def cmd_tfidf(args: argparse.Namespace) -> int:
     from .tfidf import run_tfidf
 
+    classifier = getattr(args, "classifier", "linsvc")
     dataset = load_dataset()
-    _print_header(f"TF-IDF + LinearSVC grid search (cv={args.cv}, scoring={args.scoring})")
+    _print_header(
+        f"TF-IDF + {classifier} grid search (cv={args.cv}, scoring={args.scoring})"
+    )
     result = run_tfidf(
         dataset,
+        classifier=classifier,
         cv=args.cv,
         scoring=args.scoring,
         n_jobs=args.n_jobs,
@@ -82,23 +86,18 @@ def cmd_embed(args: argparse.Namespace) -> int:
     from .embed import run_embed
 
     dataset = load_dataset()
-    _print_header(f"Embeddings + LogisticRegression: {args.model}")
+    _print_header(f"Embedding pipeline (TableVectorizer + TextEncoder) + LR: {args.model}")
     result = run_embed(
         dataset,
         model_name=args.model,
         batch_size=args.batch_size,
         n_repeats=args.n_repeats,
-        use_cache=not args.no_cache,
         C=args.C,
-        show_progress=not args.quiet,
     )
     _print_header("Results")
     print(f"device: {result.device}, dim: {result.embedding_dim}")
-    if result.train_encode_timing:
-        print(f"encode train: {format_seconds(result.train_encode_timing['median'])}")
-        print(f"encode test:  {format_seconds(result.test_encode_timing['median'])}")
-    else:
-        print("encode: loaded cached embeddings (timings unavailable)")
+    print("timings are end-to-end: fit includes encoding the train split, "
+          "predict includes encoding the test split")
     print(f"fit: {format_seconds(result.fit_timing['median'])}")
     print(f"predict: {format_seconds(result.predict_timing['median'])} "
           f"({result.throughput_docs_per_s:.0f} docs/s)")
@@ -106,6 +105,30 @@ def cmd_embed(args: argparse.Namespace) -> int:
           f"macro-F1={result.metrics['f1_macro']:.4f}")
     print(result.report)
 
+    paths = save_method_artifacts(result)
+    print("saved:", ", ".join(str(p) for p in paths.values()))
+    return 0
+
+
+def cmd_hgb(args: argparse.Namespace) -> int:
+    from .hgb import run_hgb
+
+    dataset = load_dataset()
+    _print_header(f"HistGradientBoosting on LSA(TF-IDF) features (n_components={args.n_components})")
+    result = run_hgb(
+        dataset,
+        n_components=args.n_components,
+        n_repeats=args.n_repeats,
+        use_cache=not args.no_cache,
+    )
+    _print_header("Results")
+    print(f"tf-idf + svd fit: {format_seconds(result.encode_train_timing.get('median', 0))}")
+    print(f"hgb fit: {format_seconds(result.fit_timing.get('median', 0))}")
+    print(f"predict: {format_seconds(result.predict_timing.get('median', 0))} "
+          f"({result.throughput_docs_per_s:.0f} docs/s)")
+    print(f"test accuracy={result.metrics['accuracy']:.4f} "
+          f"macro-F1={result.metrics['f1_macro']:.4f}")
+    print(result.report)
     paths = save_method_artifacts(result)
     print("saved:", ", ".join(str(p) for p in paths.values()))
     return 0
@@ -187,9 +210,14 @@ def cmd_report(args: argparse.Namespace) -> int:
 def cmd_all(args: argparse.Namespace) -> int:
     exit_code = 0
     if not args.skip_tfidf:
-        exit_code |= cmd_tfidf(_tfidf_namespace(args))
+        for classifier in args.classifiers.split(","):
+            classifier = classifier.strip()
+            if classifier:
+                exit_code |= cmd_tfidf(_tfidf_namespace(args, classifier))
     if not args.skip_embed:
         exit_code |= cmd_embed(_embed_namespace(args))
+    if not args.skip_hgb:
+        exit_code |= cmd_hgb(_hgb_namespace(args))
 
     if not args.skip_jev:
         if openrouter_api_key():
@@ -204,9 +232,9 @@ def cmd_all(args: argparse.Namespace) -> int:
 # -- argument parsing ---------------------------------------------------------
 
 
-def _tfidf_namespace(args: argparse.Namespace) -> argparse.Namespace:
+def _tfidf_namespace(args: argparse.Namespace, classifier: str) -> argparse.Namespace:
     return argparse.Namespace(
-        cv=args.cv, scoring=args.scoring, n_jobs=args.n_jobs,
+        classifier=classifier, cv=args.cv, scoring=args.scoring, n_jobs=args.n_jobs,
         n_repeats=args.repeats, verbose=args.verbose,
     )
 
@@ -214,8 +242,13 @@ def _tfidf_namespace(args: argparse.Namespace) -> argparse.Namespace:
 def _embed_namespace(args: argparse.Namespace) -> argparse.Namespace:
     return argparse.Namespace(
         model=args.embed_model, batch_size=args.batch_size,
-        n_repeats=args.repeats, no_cache=args.no_cache, C=args.C,
-        quiet=args.quiet,
+        n_repeats=args.repeats, C=args.C,
+    )
+
+
+def _hgb_namespace(args: argparse.Namespace) -> argparse.Namespace:
+    return argparse.Namespace(
+        n_components=args.n_components, n_repeats=args.repeats, no_cache=args.no_cache
     )
 
 
@@ -240,7 +273,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_data.add_argument("--no-cache", action="store_true")
     p_data.set_defaults(func=cmd_data)
 
-    p_tfidf = sub.add_parser("tfidf", help="run the TF-IDF + LinearSVC grid search")
+    p_tfidf = sub.add_parser("tfidf", help="run a TF-IDF grid search")
+    p_tfidf.add_argument("--classifier", default="linsvc",
+                         choices=["linsvc", "lr", "nb"])
     p_tfidf.add_argument("--cv", type=int, default=5)
     p_tfidf.add_argument("--scoring", default="accuracy")
     p_tfidf.add_argument("--n-jobs", type=int, default=-1)
@@ -248,14 +283,20 @@ def build_parser() -> argparse.ArgumentParser:
     p_tfidf.add_argument("--verbose", type=int, default=1)
     p_tfidf.set_defaults(func=cmd_tfidf)
 
-    p_embed = sub.add_parser("embed", help="run the embedding + logistic regression")
+    p_embed = sub.add_parser(
+        "embed", help="run the skrub TableVectorizer(TextEncoder) + LR pipeline"
+    )
     p_embed.add_argument("--model", default="sentence-transformers/all-MiniLM-L6-v2")
-    p_embed.add_argument("--batch-size", type=int, default=64)
+    p_embed.add_argument("--batch-size", type=int, default=32)
     p_embed.add_argument("--n-repeats", type=int, default=3)
     p_embed.add_argument("--C", type=float, default=10.0)
-    p_embed.add_argument("--no-cache", action="store_true")
-    p_embed.add_argument("--quiet", action="store_true", help="hide encoding progress bars")
     p_embed.set_defaults(func=cmd_embed)
+
+    p_hgb = sub.add_parser("hgb", help="HistGradientBoosting on LSA(TF-IDF) features")
+    p_hgb.add_argument("--n-components", type=int, default=100)
+    p_hgb.add_argument("--n-repeats", type=int, default=3)
+    p_hgb.add_argument("--no-cache", action="store_true")
+    p_hgb.set_defaults(func=cmd_hgb)
 
     p_jev = sub.add_parser("jev", help="run zero-shot classification with Jev")
     p_jev.add_argument("--model", default=JEV_MODEL_DEFAULT)
@@ -277,7 +318,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_all = sub.add_parser("all", help="run every available method and report")
     p_all.add_argument("--skip-tfidf", action="store_true")
     p_all.add_argument("--skip-embed", action="store_true")
+    p_all.add_argument("--skip-hgb", action="store_true")
     p_all.add_argument("--skip-jev", action="store_true")
+    p_all.add_argument("--n-components", type=int, default=100)
     p_all.add_argument("--cv", type=int, default=5)
     p_all.add_argument("--scoring", default="accuracy")
     p_all.add_argument("--n-jobs", type=int, default=-1)
@@ -285,10 +328,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_all.add_argument("--verbose", type=int, default=1)
     p_all.add_argument("--embed-model",
                        default="sentence-transformers/all-MiniLM-L6-v2")
-    p_all.add_argument("--batch-size", type=int, default=64)
+    p_all.add_argument("--batch-size", type=int, default=32)
     p_all.add_argument("--C", type=float, default=10.0)
+    p_all.add_argument("--classifiers", default="linsvc,lr,nb",
+                       help="comma-separated TF-IDF classifiers to run")
     p_all.add_argument("--no-cache", action="store_true")
-    p_all.add_argument("--quiet", action="store_true")
     p_all.add_argument("--jev-model", default=JEV_MODEL_DEFAULT)
     p_all.add_argument("--concurrency", type=int, default=8)
     p_all.add_argument("--jev-limit", type=int, default=None)

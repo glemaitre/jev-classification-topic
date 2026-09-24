@@ -1,6 +1,6 @@
 # Jev benchmark: TF-IDF vs LM embeddings vs TypeSafe Jev
 
-Compare three ways of classifying the full **20 Newsgroups** dataset (all 20
+Compare several ways of classifying the full **20 Newsgroups** dataset (all 20
 classes, 11,314 train / 7,532 test documents):
 
 1. **TF-IDF + LinearSVC** with grid search — the classic sparse lexical baseline,
@@ -9,7 +9,10 @@ classes, 11,314 train / 7,532 test documents):
 2. **Sentence embeddings + LogisticRegression** — a language-model text encoder
    (`sentence-transformers/all-MiniLM-L6-v2`) that captures semantics, with a
    linear classifier trained on the frozen embeddings.
-3. **Jev** (`typesafe/jev-1.13` via OpenRouter) — TypeSafe's *System One*
+3. **HistGradientBoosting on LSA(TF-IDF)** — TF-IDF reduced by truncated SVD to
+   100 dense components, then a gradient-boosted tree model (dense input is
+   required by `HistGradientBoostingClassifier`).
+4. **Jev** (`typesafe/jev-1.13` via OpenRouter) — TypeSafe's *System One*
    decisions model, used **zero-shot**: each post is sent as `state` with a single
    `choice` question whose criteria are the 20 newsgroup names.
 
@@ -48,6 +51,7 @@ uv run jevbench all
 uv run jevbench data                 # download/cache the dataset, print stats
 uv run jevbench tfidf                # grid search + timings
 uv run jevbench embed                # MiniLM embeddings + logistic regression
+uv run jevbench hgb                  # HistGradientBoosting on LSA(TF-IDF)
 uv run jevbench jev --concurrency 8  # zero-shot Jev on the full test set
 uv run jevbench report               # aggregate results -> REPORT.md + plots
 ```
@@ -58,6 +62,7 @@ Useful options:
 | --- | --- | --- |
 | `tfidf` | `--cv 5 --scoring accuracy` | CV folds / scoring (grid from the sklearn example) |
 | `embed` | `--model sentence-transformers/all-MiniLM-L6-v2 --C 10` | encoder and regularisation |
+| `hgb` | `--n-components 100` | LSA dimensionality fed to HistGradientBoosting |
 | `jev` | `--model typesafe/jev-1.13` | pinned model id (`~typesafe/jev-latest` for the alias) |
 | `jev` | `--concurrency 8` | parallel in-flight requests |
 | `jev` | `--limit 500` | only classify the first N test documents |
@@ -117,9 +122,11 @@ src/jevbench/
   timing.py      timers, repeated runs, latency percentiles
   metrics.py     accuracy/F1/kappa, per-class report, confusion
   tfidf.py       method A
+  features.py    shared TF-IDF -> truncated SVD (LSA) dense features
   embed.py       method B
+  hgb.py         method C (HistGradientBoosting on LSA)
   jev_client.py  OpenRouter System One client (probe, retries, cache)
-  jev_eval.py    method C + determinism check
+  jev_eval.py    method D (zero-shot Jev) + determinism check
   report.py      tables, plots, REPORT.md
   cli.py         `jevbench` entry point
 scripts/probe_openrouter.py

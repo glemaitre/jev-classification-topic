@@ -297,7 +297,7 @@ def write_summary_report(
     timing_table = build_timing_table(payloads)
 
     lines: list[str] = []
-    lines.append("# 20 Newsgroups benchmark — TF-IDF vs LM embeddings vs Jev\n")
+    lines.append("# 20 Newsgroups benchmark — TF-IDF, embeddings, HGB vs Jev\n")
     lines.append(
         f"- Train documents: **{dataset_info['n_train']}**; "
         f"test documents: **{dataset_info['n_test']}**; "
@@ -328,8 +328,14 @@ def write_summary_report(
 
     lines.append("## Notes on fairness\n")
     lines.append(
-        "- The TF-IDF and embedding methods are **supervised**: they train on the "
-        "labelled train split. Jev is used **zero-shot** on the same test set."
+        "- The local methods (TF-IDF, embeddings, HistGradientBoosting) are "
+        "**supervised**: they train on the labelled train split. Jev is used "
+        "**zero-shot** on the same test set."
+    )
+    lines.append(
+        "- HistGradientBoosting needs dense input, so it runs on TF-IDF reduced by "
+        "truncated SVD to 100 components (LSA); the aggressive reduction limits its "
+        "accuracy relative to the sparse TF-IDF baseline."
     )
     lines.append(
         "- Jev's confidences are calibrated probabilities; the TF-IDF SVM exposes no "
